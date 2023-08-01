@@ -2889,6 +2889,7 @@ class Dataset:
         path: str,
         *,
         tf_schema: Optional["schema_pb2.Schema"] = None,
+        compression_type: Optional[str] = None,
         filesystem: Optional["pyarrow.fs.FileSystem"] = None,
         try_create_dir: bool = True,
         arrow_open_stream_args: Optional[Dict[str, Any]] = None,
@@ -2931,6 +2932,9 @@ class Dataset:
         Args:
             path: The path to the destination root directory, where tfrecords
                 files are written to.
+            tf_schema: Tensorflow Metadata Schema used for tf.Example serialization.
+            compression_type: Writes compressed TFRecords, either "gzip", or "zlib".
+                Defaults to None, which does not compress the data.
             filesystem: The pyarrow filesystem implementation to write to.
                 These filesystems are specified in the
                 `pyarrow docs <https://arrow.apache.org/docs\
@@ -2967,6 +2971,7 @@ class Dataset:
             open_stream_args=arrow_open_stream_args,
             block_path_provider=block_path_provider,
             tf_schema=tf_schema,
+            compression_type=compression_type,
         )
 
     @PublicAPI(stability="alpha")

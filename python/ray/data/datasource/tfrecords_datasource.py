@@ -59,7 +59,6 @@ class TFRecordDatasource(FileBasedDatasource):
         block: BlockAccessor,
         writer_args_fn: Callable[[], Dict[str, Any]] = lambda: {},
         tf_schema: Optional["schema_pb2.Schema"] = None,
-        compression_type: Optional[str] = None,
         **writer_args,
     ) -> None:
         _check_import(self, module="crc32c", package="crc32c")
@@ -75,7 +74,7 @@ class TFRecordDatasource(FileBasedDatasource):
 
         # Write each example to the arrow file in the TFRecord format.
         for example in examples:
-            _write_record(f, example, compression_type)
+            _write_record(f, example, writer_args.get("compression_type"))
 
 
 def _convert_example_to_dict(
