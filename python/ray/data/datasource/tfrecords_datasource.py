@@ -1,4 +1,6 @@
+import gzip
 import struct
+import zlib
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -57,6 +59,7 @@ class TFRecordDatasource(FileBasedDatasource):
         block: BlockAccessor,
         writer_args_fn: Callable[[], Dict[str, Any]] = lambda: {},
         tf_schema: Optional["schema_pb2.Schema"] = None,
+        compression_type: Optional[str] = None,
         **writer_args,
     ) -> None:
         _check_import(self, module="crc32c", package="crc32c")
@@ -72,7 +75,7 @@ class TFRecordDatasource(FileBasedDatasource):
 
         # Write each example to the arrow file in the TFRecord format.
         for example in examples:
-            _write_record(f, example)
+            _write_record(f, example, compression_type)
 
 
 def _convert_example_to_dict(
@@ -407,14 +410,19 @@ def _read_records(
 def _write_record(
     file: "pyarrow.NativeFile",
     example: "tf.train.Example",
+    compression_type: str = None,
 ) -> None:
     record = example.SerializeToString()
     length = len(record)
     length_bytes = struct.pack("<Q", length)
-    file.write(length_bytes)
-    file.write(_masked_crc(length_bytes))
-    file.write(record)
-    file.write(_masked_crc(record))
+    contents = length_bytes + _masked_crc(length_bytes) + record + _masked_crc(record)
+    # Compress the bytes contents
+    if compression_type == "gzip":
+        contents = gzip.compress(contents)
+    elif compression_type == "zlib":
+        contents = zlib.compress(contents)
+    # otherwise, no compression
+    file.write(contents)
 
 
 def _masked_crc(data: bytes) -> bytes:
